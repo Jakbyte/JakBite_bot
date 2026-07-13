@@ -83,7 +83,7 @@ async def check_tasks_and_remind(bot: Bot):
             )
             
             kb = InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="✅ Я виконав, відчепись! 😤", callback_data=f"complete_{task_id}")],
+                [InlineKeyboardButton(text="✅ Я виконав, відчепись! 😤", callback_data=f"done_task_{task_id}")],
                 [InlineKeyboardButton(text="❌ Я не встиг, ще 5 хв! ⏳", callback_data=f"snooze_{task_id}")],
             ])
             
