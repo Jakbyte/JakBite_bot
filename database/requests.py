@@ -15,13 +15,30 @@ def create_users_table():
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     
-    # Створюємо ідеальну таблицю з усіма потрібними колонками
     cur.execute('''CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY,
         username TEXT,
         completed INTEGER DEFAULT 0,
-        snoozed INTEGER DEFAULT 0
+        snoozed INTEGER DEFAULT 0,
+        toxicity TEXT DEFAULT 'Кат'
     )''')
+    
+    cur.execute('''CREATE TABLE IF NOT EXISTS tasks (
+        task_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        category TEXT,
+        task_text TEXT,
+        deadline TEXT,
+        remind_offset INTEGER
+    )''')
+    
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN completed INTEGER DEFAULT 0")
+        cur.execute("ALTER TABLE users ADD COLUMN snoozed INTEGER DEFAULT 0")
+        cur.execute("ALTER TABLE users ADD COLUMN toxicity TEXT DEFAULT 'Кат'")
+    except sqlite3.OperationalError:
+        pass 
+        
     conn.commit()
     conn.close()
 
