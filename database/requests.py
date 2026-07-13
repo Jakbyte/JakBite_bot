@@ -15,9 +15,6 @@ def create_users_table():
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     
-    # 🔥 ЯДЕРНА КНОПКА: Видаляє стару таблицю, щоб уникнути помилки з колонками
-    cur.execute("DROP TABLE IF EXISTS users")
-    
     # Створюємо ідеальну таблицю з усіма потрібними колонками
     cur.execute('''CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY,

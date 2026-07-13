@@ -8,7 +8,7 @@ from scheduler import check_tasks_and_remind
 from create_bot import dp, bot
 from handlers import user_hd, admin_hd, moder_hd
 from database.connect import db_start
-from database.requests import create_users_table,upgrade_db_toxicity
+from database.requests import create_users_table, upgrade_db_toxicity
 
 #
 async def on_startup():
@@ -33,8 +33,6 @@ async def main():
         stream = sys.stdout
     )
 
-    # 2. Оновлюємо базу даних (Та сама Ядерна кнопка!)
-    create_users_table()
     upgrade_db_toxicity()
 
     # 3. Підключаємо роутери
