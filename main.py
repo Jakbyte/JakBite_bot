@@ -32,7 +32,7 @@ async def main():
         format = "%(asctime)s - [%(levelname)s] - %(message)s",
         stream = sys.stdout
     )
-
+    create_users_table()
     upgrade_db_toxicity()
 
     # 3. Підключаємо роутери
