@@ -42,7 +42,7 @@ def get_remind_keyboard():
     """Генерація кнопок для вибору часу нагадування"""
     builder = InlineKeyboardBuilder()
     builder.button(text="Вчасно ⏱", callback_data="remind_0")
-    builder.button(text="За 1 хв 🏃", callback_data="remind_1")
+    #builder.button(text="За 1 хв 🏃", callback_data="remind_1")
     builder.button(text="Кожні 5 хв 🔄", callback_data="remind_-5") 
     builder.button(text="За 15 хв 🏃", callback_data="remind_15")
     builder.button(text="За 30 хв ⏰", callback_data="remind_30")

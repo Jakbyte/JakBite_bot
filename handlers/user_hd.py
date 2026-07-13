@@ -33,7 +33,6 @@ from database.requests import (
     set_user_toxicity,
     get_user_toxicity
 )
-# Оновили імпорт: замість PRAISE_QUOTES беремо наш новий SUCCESS_QUOTES
 from data.vocabulary import TOXIC_QUOTES, SNOOZE_QUOTES, SUCCESS_QUOTES, SHARE_TEMPLATES, NAVIGATION_TEXTS
 
 router = Router()
@@ -521,7 +520,7 @@ async def process_remind_time(callback: types.CallbackQuery, state: FSMContext):
     
     await callback.message.answer(
         f"✅ **Завдання успішно додано в групу [{category}], нікчемо!**\n\n"
-        f"📝 Що сделать: «_{task_text}_»\n"
+        f"📝 Що зробити: «_{task_text}_»\n"
         f"⏰ Кінцевий дедлайн: **{final_deadline}**\n"
         f"🔔 Нагадаю: **{offset_text}**\n\n"
         "Спробуй тільки проґавити цей час... Годинник цокає! ⏱😈",
