@@ -65,7 +65,7 @@ async def start_broadcast(message: types.Message, state: FSMContext):
     )
     await state.set_state(BroadcastState.waiting_for_message)
 
-# --- ПРИЙОМ ТА ВІДПРАВКА РОЗСИЛКИ ---
+# --- ПРИЙОМ ТА ВІДПРАВКА РОЗСИЛКИ (ОДНИМ ПОВІДОМЛЕННЯМ) ---
 @router.message(BroadcastState.waiting_for_message, F.from_user.id == ADMIN_ID)
 async def process_broadcast(message: types.Message, state: FSMContext):
     if message.text and message.text.lower() == 'скасувати':
@@ -77,11 +77,46 @@ async def process_broadcast(message: types.Message, state: FSMContext):
     sent_count = 0
     await message.answer("⏳ Починаю розсилку. Це може зайняти трохи часу...")
 
+    header = "📢 <b>Вказівка від JakBite (Цифровий Кат):</b>\n\n"
+
     for user_id in user_ids:
         try:
-            await message.copy_to(user_id)
+            if message.text:
+                await message.bot.send_message(
+                    chat_id=user_id,
+                    text=f"{header}{message.text}",
+                    parse_mode="HTML"
+                )
+                
+            elif message.photo:
+                caption = f"{header}{message.caption}" if message.caption else header
+                await message.bot.send_photo(
+                    chat_id=user_id,
+                    photo=message.photo[-1].file_id,
+                    caption=caption,
+                    parse_mode="HTML"
+                )
+
+            elif message.video:
+                caption = f"{header}{message.caption}" if message.caption else header
+                await message.bot.send_video(
+                    chat_id=user_id,
+                    video=message.video.file_id,
+                    caption=caption,
+                    parse_mode="HTML"
+                )
+                
+            else:
+                await message.bot.send_message(
+                    chat_id=user_id,
+                    text=header,
+                    parse_mode="HTML"
+                )
+                await message.copy_to(user_id)
+
             sent_count += 1
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.05) 
+            
         except Exception:
             pass
             
