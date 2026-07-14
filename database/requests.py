@@ -208,3 +208,21 @@ def get_user_toxicity(user_id: int) -> str:
     res = cur.fetchone()
     conn.close()
     return res[0] if res and res[0] else 'Кат'
+
+# Отримує список всіх ID користувачів для розсилки
+def get_all_user_ids() -> list:
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor() 
+    cur.execute("SELECT user_id FROM users")
+    users = cur.fetchall()
+    conn.close()
+    return [user[0] for user in users]
+
+# Отримує топ-10 користувачів за кількістю прострочених тасок (snoozed)
+def get_top_lazy_users() -> list:
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute("SELECT user_id, username, completed, snoozed FROM users ORDER BY snoozed DESC LIMIT 10")
+    users = cur.fetchall()
+    conn.close()
+    return users
