@@ -3,10 +3,23 @@ from datetime import datetime, timedelta
 from create_bot import DB_NAME
 
 # Реєстрація нового юзера в базі
-def add_user(user_id: int, username: str):
+def add_user(user_id: int, username: str, first_name: str):
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
-    cur.execute("INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)", (user_id, username))
+    try:
+        cur.execute("""
+            INSERT INTO users (user_id, username, first_name, completed, snoozed) 
+            VALUES (?, ?, ?, 0, 0)
+            ON CONFLICT(user_id) DO UPDATE SET 
+                username = excluded.username,
+                first_name = excluded.first_name
+        """, (user_id, username, first_name))
+    except sqlite3.OperationalError:
+        cur.execute("""
+            INSERT INTO users (user_id, username, completed, snoozed) 
+            VALUES (?, ?, 0, 0)
+            ON CONFLICT(user_id) DO UPDATE SET username = excluded.username
+        """, (user_id, username))
     conn.commit()
     conn.close()
 
@@ -222,7 +235,57 @@ def get_all_user_ids() -> list:
 def get_top_lazy_users() -> list:
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
-    cur.execute("SELECT user_id, username, completed, snoozed FROM users ORDER BY snoozed DESC LIMIT 10")
-    users = cur.fetchall()
+    try:
+        cur.execute("SELECT user_id, username, first_name, completed, snoozed FROM users ORDER BY snoozed DESC LIMIT 10")
+        users = cur.fetchall()
+    except sqlite3.OperationalError:
+        cur.execute("SELECT user_id, username, completed, snoozed FROM users ORDER BY snoozed DESC LIMIT 10")
+        users = [(u[0], u[1], "Раб", u[2], u[3]) for u in cur.fetchall()]
     conn.close()
     return users
+
+# --- ШПИГУН: ОТРИМАТИ ІНФОРМАЦІЮ ПРО ЮЗЕРА ---
+def get_user_info(user_id: int):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT username, first_name, completed, snoozed FROM users WHERE user_id = ?", (user_id,))
+        user = cur.fetchone()
+    except sqlite3.OperationalError:
+        cur.execute("SELECT username, completed, snoozed FROM users WHERE user_id = ?", (user_id,))
+        res = cur.fetchone()
+        user = (res[0], "Без імені", res[1], res[2]) if res else None
+    conn.close()
+    return user
+
+
+# --- ШПИГУН: ОТРИМАТИ ТАСКИ ЮЗЕРА ---
+def get_user_tasks(user_id: int) -> list:
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    # Отримуємо лише НЕвиконані таски
+    try:
+        cur.execute("SELECT task_name, deadline FROM tasks WHERE user_id = ? AND is_completed = 0", (user_id,))
+    except sqlite3.OperationalError:
+        # Якщо колонка завершення називається completed, а не is_completed
+        cur.execute("SELECT task_name, deadline FROM tasks WHERE user_id = ? AND completed = 0", (user_id,))
+    tasks = cur.fetchall()
+    conn.close()
+    return tasks
+
+def update_db_schema():
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    cur.execute("PRAGMA table_info(users)")
+    columns = [column[1] for column in cur.fetchall()]
+    if "first_name" not in columns:
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN first_name TEXT DEFAULT 'Раб'")
+            conn.commit()
+            print("✅ [БАЗА ДАНИХ] Структуру успішно оновлено! Додано колонку first_name.")
+        except Exception as e:
+            print(f"❌ [БАЗА ДАНИХ] Помилка при спробі оновити структуру: {e}")
+    else:
+        print("ℹ️ [БАЗА ДАНИХ] Структура актуальна. Колонка first_name вже є.")
+        
+    conn.close()

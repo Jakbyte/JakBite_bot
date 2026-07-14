@@ -1,4 +1,3 @@
-import asyncio
 from aiogram import Router, types, F
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardRemove
@@ -6,9 +5,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from keyboard.admin_kb import admin_menu
-from create_bot import ADMIN_ID, bot
-from database.requests import get_users_count, get_tasks_count, get_all_user_ids, get_top_lazy_users
-
+from create_bot import ADMIN_ID
+from database.requests import (
+    get_users_count, 
+    get_tasks_count, 
+    get_all_user_ids, 
+    get_top_lazy_users, 
+    get_user_info, 
+    get_user_tasks
+)
 
 router = Router()
 
@@ -46,15 +51,22 @@ async def show_statistics(message: types.Message):
 async def show_users(message: types.Message):
     top_users = get_top_lazy_users()
     if not top_users:
-        await message.answer("База порожня. Рабів ще немає.")
+        await message.answer("База порожня. Жодного раба ще не спіймано.")
         return
-    text = "🏆**ДОШКА ГАНЬБИ (Топ-10 ледарів):**\n\n"
-    for i, user in enumerate(top_users, start = 1):
-        uid, username, comp, snooz = user
-        name = f"@{username}" if username else f"ID:{uid}"
-        text += f"{i}. {name} | ✅ {comp} | ❌ {snooz} (прострочено) \n"
-    await message.answer(text)
 
+    text = "🏆 **ДОШКА ГАНЬБИ (Топ-10 ледарів проєкту):**\n\n"
+    for i, user in enumerate(top_users, start=1):
+        uid, username, first_name, comp, snooz = user
+        
+        # Форматуємо ім'я та юзернейм
+        name_str = first_name if first_name else "Анонім"
+        user_link = f"@{username}" if username else "немає юзернейму"
+        
+        text += f"{i}. 👤 <b>{name_str}</b> ({user_link})\n"
+        text += f"   └─ 🔑 ID: <code>{uid}</code> | ✅ Закрито: {comp} | ❌ Прострочено: <b>{snooz}</b>\n\n"
+    
+    await message.answer(text, parse_mode="HTML")
+    
 # --- ПОЧАТОК РОЗСИЛКИ ---
 @router.message(F.text == '📢 Токсична розсилка', F.from_user.id == ADMIN_ID)
 async def start_broadcast(message: types.Message, state: FSMContext):
@@ -122,6 +134,60 @@ async def process_broadcast(message: types.Message, state: FSMContext):
             
     await state.clear()
     await message.answer(f"✅ **Розсилка успішно завершена!**\nДоставлено повідомлень: {sent_count} з {len(user_ids)}")
+
+# 2. РЕЖИМ ШПИГУНА (ЗАПИТ ID)
+@router.message(F.text == '👁️ Шпигувати', F.from_user.id == ADMIN_ID)
+async def start_spy(message: types.Message, state: FSMContext):
+    await message.answer(
+        "👁️ **АКТИВАЦІЯ РЕЖИМУ ШПИГУНА**\n\n"
+        "Введи Telegram ID раба, за яким хочеш встановити нагляд.\n"
+        "(ID можна скопіювати з меню '👤 Користувачі')\n\n"
+        "*(Напиши 'скасувати' для виходу з режиму)*"
+    )
+    await state.set_state(SpyState.waiting_for_user_id)
+
+# РЕЖИМ ШПИГУНА (ОБРОБКА ВВЕДЕНОГО ID)
+@router.message(SpyState.waiting_for_user_id, F.from_user.id == ADMIN_ID)
+async def process_spy(message: types.Message, state: FSMContext):
+    if message.text.lower() == 'скасувати':
+        await state.clear()
+        await message.answer("Шпигунську місію скасовано. Нагляд згорнуто.", reply_markup=admin_menu)
+        return
+
+    if not message.text.isdigit():
+        await message.answer("❌ Що це за шифр? Введи числовий ID користувача:")
+        return
+
+    target_id = int(message.text)
+    user_info = get_user_info(target_id)
+
+    if not user_info:
+        await message.answer("❌ Такого раба немає в моїй базі даних. Перевір ID і спробуй ще раз:")
+        return
+
+    username, first_name, completed, snoozed = user_info
+    tasks = get_user_tasks(target_id)
+
+    name_str = first_name if first_name else "Анонім"
+    user_link = f"@{username}" if username else "немає"
+    
+    report = (
+        f"🕵️‍♂️ **ЗВІТ ШПИГУНА ДЛЯ НАГЛЯДАЧА** 🕵️‍♂️\n\n"
+        f"👤 **Об'єкт:** {name_str} ({user_link})\n"
+        f"🔑 **ID:** <code>{target_id}</code>\n"
+        f"📊 **Статистика ліні:** ✅ Закрито: {completed} | ❌ Прострочено: {snoozed}\n\n"
+    )
+
+    if not tasks:
+        report += "📝 **Активні таски:** Цей хитрий хробак закрив усі таски або взагалі нічого не планує! Підозріла тиша..."
+    else:
+        report += "📝 **Список невиконаних тасок:**\n"
+        for i, task in enumerate(tasks, start=1):
+            task_name, deadline = task
+            report += f"  {i}. 📌 <i>\"{task_name}\"</i> (Дедлайн: {deadline})\n"
+
+    await message.answer(report, parse_mode="HTML", reply_markup=admin_menu)
+    await state.clear()  
 
 # --- ВИХІД З АДМІНКИ ---
 @router.message(F.text == '⬅️ Головне меню', F.from_user.id == ADMIN_ID)

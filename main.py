@@ -8,7 +8,7 @@ from scheduler import check_tasks_and_remind
 from create_bot import dp, bot
 from handlers import user_hd, admin_hd, moder_hd
 from database.connect import db_start
-from database.requests import create_users_table, upgrade_db_toxicity
+from database.requests import create_users_table, upgrade_db_toxicity, update_db_schema
 
 
 async def on_startup():
@@ -31,7 +31,9 @@ async def main():
         format = "%(asctime)s - [%(levelname)s] - %(message)s",
         stream = sys.stdout
     )
+
     create_users_table()
+    update_db_schema()
     upgrade_db_toxicity()
 
     # Підключаємо роутери
