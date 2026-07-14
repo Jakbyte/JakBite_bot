@@ -88,7 +88,7 @@ def add_task_to_db(user_id: int, category: str, task_text: str, deadline: str, r
 def get_user_tasks(user_id: int) -> list:
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
-    cur.execute("SELECT task_id, category, task_text, deadline FROM tasks WHERE user_id = ?", (user_id,))
+    cur.execute("SELECT task_text, deadline FROM tasks WHERE user_id = ? AND is_completed = 0", (user_id,))
     tasks = cur.fetchall()
     conn.close()
     return tasks
@@ -97,7 +97,7 @@ def get_user_tasks(user_id: int) -> list:
 def delete_task(task_id: int):
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
-    cur.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
+    cur.execute("UPDATE tasks SET is_completed = 1 WHERE task_id = ?", (task_id,))
     conn.commit()
     conn.close()
 
@@ -105,7 +105,7 @@ def delete_task(task_id: int):
 def get_all_active_tasks() -> list:
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
-    cur.execute("SELECT task_id, user_id, category, task_text, deadline, remind_offset FROM tasks")
+    cur.execute("SELECT task_id, user_id, category, task_text, deadline, remind_offset FROM tasks WHERE is_completed = 0")
     tasks = cur.fetchall()
     conn.close()
     return tasks
@@ -128,9 +128,9 @@ def get_tasks_by_category(user_id: int, category: str) -> list:
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     if category == "Усі":
-        cur.execute("SELECT task_id, category, task_text, deadline FROM tasks WHERE user_id = ?", (user_id,))
+        cur.execute("SELECT task_id, category, task_text, deadline FROM tasks WHERE user_id = ? AND is_completed = 0", (user_id,))
     else:
-        cur.execute("SELECT task_id, category, task_text, deadline FROM tasks WHERE user_id = ? AND category =?", (user_id, category))
+        cur.execute("SELECT task_id, category, task_text, deadline FROM tasks WHERE user_id = ? AND category = ? AND is_completed = 0", (user_id, category))
     tasks = cur.fetchall()
     conn.close()
     return tasks
@@ -263,12 +263,7 @@ def get_user_info(user_id: int):
 def get_user_tasks(user_id: int) -> list:
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
-    # Отримуємо лише НЕвиконані таски
-    try:
-        cur.execute("SELECT task_name, deadline FROM tasks WHERE user_id = ? AND is_completed = 0", (user_id,))
-    except sqlite3.OperationalError:
-        # Якщо колонка завершення називається completed, а не is_completed
-        cur.execute("SELECT task_name, deadline FROM tasks WHERE user_id = ? AND completed = 0", (user_id,))
+    cur.execute("SELECT task_text, deadline FROM tasks WHERE user_id = ?", (user_id,))
     tasks = cur.fetchall()
     conn.close()
     return tasks
@@ -276,16 +271,26 @@ def get_user_tasks(user_id: int) -> list:
 def update_db_schema():
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
+    
+    # --- ОНОВЛЕННЯ ТАБЛИЦІ USERS ---
     cur.execute("PRAGMA table_info(users)")
-    columns = [column[1] for column in cur.fetchall()]
-    if "first_name" not in columns:
+    columns_users = [column[1] for column in cur.fetchall()]
+    if "first_name" not in columns_users:
         try:
             cur.execute("ALTER TABLE users ADD COLUMN first_name TEXT DEFAULT 'Раб'")
-            conn.commit()
-            print("✅ [БАЗА ДАНИХ] Структуру успішно оновлено! Додано колонку first_name.")
+            print("✅ [БАЗА ДАНИХ] Додано колонку first_name у таблицю users.")
         except Exception as e:
-            print(f"❌ [БАЗА ДАНИХ] Помилка при спробі оновити структуру: {e}")
-    else:
-        print("ℹ️ [БАЗА ДАНИХ] Структура актуальна. Колонка first_name вже є.")
-        
+            print(f"❌ Помилка оновлення users: {e}")
+            
+    # --- ОНОВЛЕННЯ ТАБЛИЦІ TASKS ---
+    cur.execute("PRAGMA table_info(tasks)")
+    columns_tasks = [column[1] for column in cur.fetchall()]
+    if "is_completed" not in columns_tasks:
+        try:
+            cur.execute("ALTER TABLE tasks ADD COLUMN is_completed INTEGER DEFAULT 0")
+            print("✅ [БАЗА ДАНИХ] Додано колонку is_completed у таблицю tasks.")
+        except Exception as e:
+            print(f"❌ Помилка оновлення tasks: {e}")
+            
+    conn.commit()
     conn.close()
