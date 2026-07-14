@@ -20,6 +20,9 @@ router = Router()
 class BroadcastState(StatesGroup):
     waiting_for_message = State()
 
+class SpyState(StatesGroup):
+    waiting_for_user_id = State()
+
 # --- ВХІД В АДМІНКУ ---
 @router.message(Command("admin"))
 async def admin_panel(message: types.Message):
@@ -66,7 +69,7 @@ async def show_users(message: types.Message):
         text += f"   └─ 🔑 ID: <code>{uid}</code> | ✅ Закрито: {comp} | ❌ Прострочено: <b>{snooz}</b>\n\n"
     
     await message.answer(text, parse_mode="HTML")
-    
+
 # --- ПОЧАТОК РОЗСИЛКИ ---
 @router.message(F.text == '📢 Токсична розсилка', F.from_user.id == ADMIN_ID)
 async def start_broadcast(message: types.Message, state: FSMContext):
