@@ -77,7 +77,7 @@ async def process_broadcast(message: types.Message, state: FSMContext):
     sent_count = 0
     await message.answer("⏳ Починаю розсилку. Це може зайняти трохи часу...")
 
-    header = "📢 <b>Вказівка від JakBite (Цифровий Кат):</b>\n\n"
+    header = "📢 <b>Повідомлення від JakBite (Цифровий Кат):</b>\n\n"
 
     for user_id in user_ids:
         try:
