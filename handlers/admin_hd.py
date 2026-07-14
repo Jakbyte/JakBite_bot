@@ -56,7 +56,7 @@ async def show_users(message: types.Message):
     await message.answer(text)
 
 # --- ПОЧАТОК РОЗСИЛКИ ---
-@router.message(F.TEXT == '📢 Токсична розсилка', F.from_user.id == ADMIN_ID)
+@router.message(F.text == '📢 Токсична розсилка', F.from_user.id == ADMIN_ID)
 async def start_broadcast(message: types.Message, state: FSMContext):
     await message.answer(
         "📢 **РЕЖИМ МАСОВОГО ТЕРОРУ УВІМКНЕНО**\n\n"
