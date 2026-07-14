@@ -10,7 +10,7 @@ from handlers import user_hd, admin_hd, moder_hd
 from database.connect import db_start
 from database.requests import create_users_table, upgrade_db_toxicity
 
-#
+
 async def on_startup():
     db_start()
     print("----------------------------------------")
@@ -18,15 +18,14 @@ async def on_startup():
     print("🔥 Цифровий Кат готовий принижувати за дедлайни.")
     print("----------------------------------------")
 
-#
+
 async def on_shutdown():
     print("----------------------------------------")
     print("💤 JakBite Bot вимкнено. Раби тимчасово вільні...")
     print("----------------------------------------")
 
-#
+
 async def main():
-    # 1. Вмикаємо логування найпершим, щоб бачити помилки, якщо вони будуть
     logging.basicConfig(
         level = logging.INFO,
         format = "%(asctime)s - [%(levelname)s] - %(message)s",
@@ -35,7 +34,7 @@ async def main():
     create_users_table()
     upgrade_db_toxicity()
 
-    # 3. Підключаємо роутери
+    # Підключаємо роутери
     dp.include_router(admin_hd.router)
     dp.include_router(moder_hd.router)
     dp.include_router(user_hd.router)
@@ -50,7 +49,6 @@ async def main():
     scheduler.start()
     print("⏰ Планувальник запущено! Кат вийшов на полювання...")
 
-    # 6. В САМОМУ КІНЦІ запускаємо бота (один раз!)
     try:
         await bot.delete_webhook(drop_pending_updates=True)
         print("Бот запущений і готовий принижувати!")

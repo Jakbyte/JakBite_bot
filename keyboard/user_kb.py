@@ -49,8 +49,7 @@ def get_remind_keyboard():
     builder.button(text="За 1 год ⏳", callback_data="remind_60")
     builder.button(text="За 2 год ⏳", callback_data="remind_120") 
     builder.button(text="За 1 день 📅", callback_data="remind_1440")
-    
-    # Вишиковуємо кнопки: перша на весь ряд, інші по дві
+
     builder.adjust(1, 2, 2, 2) 
     return builder.as_markup()
 
@@ -94,18 +93,12 @@ def get_task_manage_keyboard(task_id: int):
     return builder.as_markup()
     
 # Кнопки для профілю
-# Кнопки для профілю (ТЕПЕР ІЗ ДИНАМІЧНИМ ТЕКСТОМ)
 def get_profile_keyboard(share_text: str):
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
-    
-    # Кнопка для скидання
     builder.button(text="🗑 Скинути статистику", callback_data="reset_stats")
-    
-    # Кнопка щоб поділитися (вставляє той текст, який ми їй передамо)
     builder.button(text="📢 Поділитися ганьбою", switch_inline_query=share_text)
-    
-    builder.adjust(1) # Кнопки одна під одною
+    builder.adjust(1) 
     return builder.as_markup()
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -114,9 +107,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 def get_toxicity_keyboard(current_mode: str = "Кат"):
     builder = InlineKeyboardBuilder()
-    
-    # Словник з нашими режимами: ключ - це реальна назва режиму, 
-    # а значення містять callback_data та красивий текст для кнопки
     modes = {
         "Нянька": {
             "cb": "tox__Нянька", 
@@ -133,7 +123,6 @@ def get_toxicity_keyboard(current_mode: str = "Кат"):
     }
     
     for mode_name, data in modes.items():
-        # Додаємо галочку, якщо цей режим зараз активний
         if mode_name == current_mode:
             btn_text = f"✅ {data['text']}"
         else:
@@ -141,5 +130,5 @@ def get_toxicity_keyboard(current_mode: str = "Кат"):
             
         builder.button(text=btn_text, callback_data=data["cb"])
         
-    builder.adjust(1) # Виводимо кнопки стовпчиком (по одній у ряд)
+    builder.adjust(1) 
     return builder.as_markup()
